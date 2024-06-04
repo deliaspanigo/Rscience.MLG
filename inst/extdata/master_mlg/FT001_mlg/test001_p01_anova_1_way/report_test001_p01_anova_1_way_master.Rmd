@@ -1,0 +1,772 @@
+---
+title: "Diplo - Semana 08 - ANOVA 1 Factor"
+author: "David Elias Panigo"
+date: "24-05-2024"
+output:
+  html_document:
+    df_print: paged
+---
+<br>
+<br>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var title = document.querySelector('h1.title');
+  var author = document.querySelector('.author');
+  var date = document.querySelector('.date');
+  
+  title.style.display = 'none';
+  author.style.display = 'none';
+  date.style.display = 'none';
+});
+</script>
+
+<div class="image-container">
+  <img src="logo_01_unc.png"      class="inline-image" width="200"  height="100">
+  <img src="logo_02_fcefyn.png"   class="inline-image" width="200"  height="100">
+  <img src="logo_03_efadoc.png"   class="inline-image" width="200"  height="100">
+  <img src="logo_04_rscience.png" class="inline-image" width="200"  height="100">
+</div>
+
+## Diplomatura en Bioestadística básica aplicada mediada con R
+
+#### Hora de ejecución: `r the_time`
+#### Sistema operativo: `r Sys.info()["sysname"]`
+#### Versión de R: `r R.version.string`
+#### Versión de RStudio: `r RStudio.Version()$version`
+#### Versión de Rscience.Diplo: `r packageVersion("Rscience.MLG")`
+
+<br>
+<br>
+
+## General Linear Models - Fixed Effects - Anova 1 way
+
+```{r,  include =FALSE}
+knitr::opts_chunk$set(echo=TRUE, comment=NA)
+```
+
+### Section 01 of 15 - Libraries
+```{r, include =T, eval = T, class.source="bg-success"}
+### Section 01 of 15 - Libraries
+library(stats)      # General Linear Models, Shapiro test and Bartlett test.
+library(agricolae)  # Tukey test
+library(gplots)     # Graphics 
+library(plotly)
+```
+<br>
+<br>
+
+### Section 02 of 15 - Load database
+```{r, include =T, eval = T, class.source="bg-success"}
+### Section  02 de 15 - Load database
+# Import database
+database <- __code_database__
+
+# Show first 5 rows
+head(x=database, n=5)
+```
+<br>
+<br>
+
+### Section 03 of 15 - Alpha value and confidence value
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  03 de 15 - Alpha value and confidence value
+
+# Alpha value and Confidence value
+alpha_value <- 0.05
+confidence_value <- 1 - alpha_value
+
+# Output alpha value
+alpha_value
+
+# Output confidence value
+confidence_value
+```
+<br>
+<br>
+
+### Section 04 of 15 - Var selection
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  04 de 15 - Var selection
+
+# Name for each selected var
+colname_vr <- '__selected_vr_name__'
+colname_factor <- '__selected_factor_name__'
+
+# All selected var in specific order
+vector_selected_vars <- c(colname_vr, colname_factor)
+vector_selected_vars
+```
+<br>
+<br>
+
+### Section  05 de 15 - minibase
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  05 de 15 - minibase
+
+# Selected vars with full data on rows only
+minibase <- na.omit(database[,vector_selected_vars])
+
+# Factor must be a factor on R enviroment.
+minibase[,colname_factor] <- as.factor(as.character(minibase[,colname_factor]))
+
+# Show first 5 rows
+head(x=minibase, n=5)
+
+# Info
+df_show_n <- data.frame(
+  "object" = c("database", "minibase"),
+  "n_col" = c(ncol(database), ncol(minibase)),
+  "n_row" = c(nrow(database), nrow(minibase))
+)
+df_show_n
+```
+<br>
+<br>
+
+
+### Section  06 de 15 - Factor info
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  06 de 15 - Factor info
+
+# Default order for levels its alphabetic order.
+  df_factor_info <- data.frame(
+    "order" = 1:nlevels(minibase[,colname_factor]),
+    "level" = levels(minibase[,colname_factor]),
+    "n" = as.vector(table(minibase[,colname_factor])),
+    "mean" = tapply(minibase[,colname_vr], minibase[,colname_factor], mean),
+    "color" = rainbow(nlevels(minibase[,colname_factor]))
+  )
+
+# Print table
+  df_factor_info
+
+  
+# # # Unbalanced reps for levels?
+# Important information for Tukey.
+# If reps its equal or not equal in all levels must be detailled
+# on Tukey test.
+  check_unbalanced_reps <- length(unique(df_factor_info$n)) > 1
+  check_unbalanced_reps
+```
+<br>
+<br>
+
+
+
+
+
+### Section  07 de 15 - Factor info
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  07 de 15 - Anova Test
+# # # Anova test
+  formula_anova <- as.formula(paste0(colname_vr, " ~ ", colname_factor))
+  lm_anova  <- lm(formula = formula_anova, data = minibase) 
+  aov_anova <- aov(lm_anova)                                                        
+  df_table_anova <- as.data.frame(summary(aov_anova)[[1]])                          
+  df_table_anova
+```
+
+
+
+
+### Section  08 de 15 - Error model variance
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  08 de 15 - Error model variance
+  # # # Standard error from model for each level
+  model_error_var <- df_table_anova$`Mean Sq`[2]
+  model_error_sd <- sqrt(model_error_var)
+
+  df_model_error <- data.frame(
+    "order" = df_factor_info$order,
+    "level" = df_factor_info$level,
+    "n" = df_factor_info$n,
+    "model_error_var" = model_error_var,
+    "model_error_sd" = model_error_sd
+  )
+  df_model_error["model_error_se"] <- df_model_error["model_error_sd"]/sqrt(df_model_error$n)
+  df_model_error
+```
+<br>
+<br>
+
+### Section  09 de 15 - minibase_mod
+```{r, include =T, eval =T, class.source="bg-success"}
+  # # # # # Section 09 - minibase_mod --------------------------------------------
+  # # # Detect rows on database there are on minibase
+  dt_rows_database_ok <- rowSums(!is.na(database[vector_selected_vars])) == ncol(minibase)
+
+
+
+  # # # Object minibase_mod and new cols
+  minibase_mod <- minibase
+  minibase_mod$"lvl_order_number" <- as.numeric(minibase_mod[,colname_factor])
+  minibase_mod$"lvl_color" <- df_factor_info$color[minibase_mod$"lvl_order_number"]
+  minibase_mod$"fitted.values" <- df_factor_info$"mean"[minibase_mod$"lvl_order_number"]
+  minibase_mod$"residuals" <- lm_anova$residuals
+  minibase_mod$"id_database" <- c(1:nrow(database))[dt_rows_database_ok]
+  minibase_mod$"id_minibase" <- 1:nrow(minibase)
+  minibase_mod$"studres" <- minibase_mod$"residuals"/model_error_sd
+
+  
+  head(x=minibase_mod, n=5)
+```
+<br>
+<br>
+
+### Section  10 de 15 - Analysis from Residuals
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# # # Residuals variance from levels from original residuals
+  df_residuals_variance_levels <- data.frame(
+    "order" = 1:nlevels(minibase_mod[,colname_factor]),
+    "level" = levels(minibase_mod[,colname_factor]),
+    "variance" = tapply(minibase_mod[,"residuals"], minibase_mod[,colname_factor], var),
+    "n" = tapply(minibase_mod[,"residuals"], minibase_mod[,colname_factor], length)
+  )
+  df_residuals_variance_levels
+
+
+
+  # # # Sum for residuals
+  sum_residuals <- sum(minibase_mod[,"residuals"])
+  sum_residuals
+
+
+
+  # # # Mean for residuals
+  mean_residuals <- mean(minibase_mod[,"residuals"])
+  mean_residuals
+  
+  # # # # # Section 08 - Requeriments for residuals-------------------------------
+  # # # Normality test (Shapiro-Wilk)
+  test_residuals_normality <- shapiro.test(minibase_mod[,"residuals"])
+  test_residuals_normality
+
+  
+  
+
+
+
+  # # # Homogeinidy test (Bartlett)
+  formula_bartlett <- as.formula(paste0("residuals", " ~ ", colname_factor))
+  test_residuals_homogeneity <- bartlett.test(formula = formula_bartlett, data = minibase_mod)
+  
+  test_residuals_homogeneity
+  
+  
+```
+<br>
+<br>
+
+
+
+
+### Section  11 de 15 - Tukey
+```{r, include =T, eval =T, class.source="bg-success"}
+ # # # # Section 11 - Tukey --------------------------------------------------
+  # # # Tukey test - Tukey with groups - Full version
+
+
+  
+  tukey01_full_groups <- agricolae::HSD.test(y = lm_anova,
+                                             trt = colname_factor,
+                                             alpha = alpha_value,
+                                             group = TRUE,
+                                             console = FALSE,
+                                             unbalanced = check_unbalanced_reps)
+
+  # Groups from Tukey
+  tukey01_full_groups
+  
+
+  # # # Tukey test - Tukey pairs comparation - Full version
+  tukey02_full_pairs <- agricolae::HSD.test(y = lm_anova,
+                                            trt = colname_factor,
+                                            alpha = alpha_value,
+                                            group = FALSE,
+                                            console = FALSE,
+                                            unbalanced = check_unbalanced_reps)
+
+
+  
+  # Groups from Tukey
+  tukey02_full_pairs
+  
+
+  # # Original table from R about Tukey
+  df_tukey_original_table <- tukey01_full_groups$groups
+  df_tukey_original_table
+
+
+
+  # # # New table about Tukey
+  df_tukey_table <- data.frame(
+    "level" = rownames(tukey01_full_groups$groups),
+    "mean" = tukey01_full_groups$groups[,1],
+    "group" = tukey01_full_groups$groups[,2]
+  )
+  df_tukey_table
+  
+  
+```
+<br>
+<br>
+
+
+### Section  12 de 15 - Measures (VR)
+```{r, include =T, eval =T, class.source="bg-success"}
+  # # # # # Section 12 - Partitioned Measures (VR)--------------------------------
+  # # # Partitioned Measures of Position (VR)
+  df_vr_position_levels <- data.frame(
+    "order" = 1:nlevels(minibase[,2]),
+    "level" = levels(minibase[,2]),
+    "min" = tapply(minibase[,1], minibase[,2], min),
+    "mean" = tapply(minibase[,1], minibase[,2], mean),
+    "Q1" = tapply(minibase[,1], minibase[,2], quantile, 0.25),
+    "median" = tapply(minibase[,1], minibase[,2], median),
+    "Q3" = tapply(minibase[,1], minibase[,2], quantile, 0.75),
+    "max" = tapply(minibase[,1], minibase[,2], max),
+    "n" = tapply(minibase[,1], minibase[,2], length)
+  )
+
+
+
+  # # # Partitioned Measures of Dispersion (VR)
+  df_vr_dispersion_levels <- data.frame(
+    "order" = 1:nlevels(minibase[,2]),
+    "level" = levels(minibase[,2]),
+    "range" = tapply(minibase[,1], minibase[,2], function(x){max(x) - min(x)}),
+    "variance" = tapply(minibase[,1], minibase[,2], var),
+    "standard_deviation" = tapply(minibase[,1], minibase[,2], sd),
+    "standard_error" = tapply(minibase[,1], minibase[,2], function(x){sd(x)/sqrt(length(x))}),
+    "n" = tapply(minibase[,1], minibase[,2], length)
+  )
+  df_vr_dispersion_levels
+
+
+### Section  12 de 15 - Partitioned Measures (VR)
+
+  # # # General Measures of Position (VR)
+  df_vr_position_general <- data.frame(
+    "min" = min(minibase[,1]),
+    "mean" = mean(minibase[,1]),
+    "median" = median(minibase[,1]),
+    "max" = max(minibase[,1]),
+    "n" = length(minibase[,1])
+  )
+  df_vr_position_general
+
+
+
+  # # # General Measures of Dispersion (VR)
+  df_vr_dispersion_general <- data.frame(
+    "range" = max(minibase[,1]) - min(minibase[,1]),
+    "variance" = var(minibase[,1]),
+    "standard_deviation" = sd(minibase[,1]),
+    "standard_error" = sd(minibase[,1])/(sqrt(length(minibase[,1]))),
+    "n" = length(minibase[,1])
+  )
+  df_vr_dispersion_general
+
+```
+<br>
+<br>
+
+
+### Section  13 de 15 - Measures (Residuals)
+```{r, include =T, eval =T, class.source="bg-success"}
+  # # # # # Section 11 - Partitioned Measures (Residuals)-------------------------
+  # # # Partitioned Measures of Position (residuals)
+  df_residuals_position_levels <- data.frame(
+    "order" = 1:nlevels(minibase_mod[,2]),
+    "level" = levels(minibase_mod[,2]),
+    "min" = tapply(minibase_mod$residuals, minibase_mod[,2], min),
+    "mean" = tapply(minibase_mod$residuals, minibase_mod[,2], mean),
+    "median" = tapply(minibase_mod$residuals, minibase_mod[,2], median),
+    "max" = tapply(minibase_mod$residuals, minibase_mod[,2], max),
+    "n" = tapply(minibase_mod$residuals, minibase_mod[,2], length)
+  )
+  df_residuals_position_levels
+
+
+
+  # # # Partitioned Measures of Dispersion (residuals)
+  df_residual_dispersion_levels <- data.frame(
+    "order" = 1:nlevels(minibase_mod[,2]),
+    "level" = levels(minibase_mod[,2]),
+    "range" = tapply(minibase_mod$residuals, minibase_mod[,2], function(x){max(x) - min(x)}),
+    "variance" = tapply(minibase_mod$residuals, minibase_mod[,2], var),
+    "standard_deviation" = tapply(minibase_mod$residuals, minibase_mod[,2], sd),
+    "standard_error" = tapply(minibase_mod$residuals, minibase_mod[,2], function(x){sd(x)/sqrt(length(x))}),
+    "n" = tapply(minibase_mod$residuals, minibase_mod[,2], length)
+  )
+  df_residual_dispersion_levels
+
+
+
+  # # # General Measures of Position (residuals)
+  df_residuals_position_general <- data.frame(
+    "min" = min(minibase_mod$residuals),
+    "mean" = mean(minibase_mod$residuals),
+    "median" = median(minibase_mod$residuals),
+    "max" = max(minibase_mod$residuals),
+    "n" = length(minibase_mod$residuals)
+  )
+  df_residuals_position_general
+
+
+
+  # # # General Measures of Dispersion (residuals)
+  df_residuals_dispersion_general <- data.frame(
+    "range" = max(minibase_mod$residuals) - min(minibase_mod$residuals),
+    "variance" = var(minibase_mod$residuals),
+    "standard_deviation" = sd(minibase_mod$residuals),
+    "standard_error" = sd(minibase_mod$residuals)/(sqrt(length(minibase_mod$residuals))),
+    "n" = length(minibase_mod$residuals)
+  )
+  df_residuals_dispersion_general
+```
+<br>
+<br>
+
+### Section  14 de 15 - Model estimators
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# # # # # Section 12 - Model estimators ----------------------------------------
+  # # # Means for each level
+  vector_est_mu_i <- df_vr_position_levels$mean
+  vector_est_mu_i
+
+
+
+  # # # Mean of means
+  est_mu <- mean(vector_est_mu_i)
+  vector_est_mu <- rep(est_mu, length(vector_est_mu_i))
+  vector_est_mu
+
+
+
+  # # # Tau efects
+  vector_est_tau_i <- vector_est_mu_i - vector_est_mu
+  vector_est_tau_i
+
+
+
+  # # # Sum of tau efects
+  sum_est_tau_i <- sum(vector_est_tau_i)
+  sum_est_tau_i
+
+
+
+  # # # Long model information on dataframe
+  df_anova1way_model_long <- data.frame(
+    "order" = df_factor_info$order,
+    "level" = df_factor_info$level,
+    "n" = df_factor_info$n,
+    "est_mu" = vector_est_mu,
+    "est_tau_i" = vector_est_tau_i
+  )
+  df_anova1way_model_long
+
+
+
+  # # # Short model information on dataframe
+  df_anova1way_model_short <- data.frame(
+    "order" = df_factor_info$order,
+    "level" = df_factor_info$level,
+    "n" = df_factor_info$n,
+    "est_mu_i" = vector_est_mu_i
+  )
+  df_anova1way_model_short
+```
+<br>
+<br>
+
+
+```{r,  eval = T, include =F}
+
+# Rechazo Normalidad:   Si, No
+# Rechazo Homogeneidad: Si, No
+# Requisito:            Si, No
+
+# Solo si cumplo requisitos
+# Rechazo Anova:        Si, No
+# Grupos en Tukey:      Si, No
+```
+
+
+```{r,  eval = T, include =F}
+# Normality
+
+  p_value_normality <- test_residuals_normality$"p.value"
+  check_residuals_normality <-  p_value_normality >= alpha_value
+  
+  phrase01_normality_T <- "El valor p es __p_value__.  
+   El valor alfa es __alpha_value__.  
+   El valor p es mayor o igual al valor de alfa.  
+   No se rechaza la Hipotesis Nula para el test de Normalidad de Shapiro-Wilks.  
+   Con un valor de confianza del __confidence_value__ no se descarta que los residuos presentan distribucion gaussiana.  
+   Estadísticamente la distribución de los residuos no es diferente de la distribución gaussiana.  "
+
+  phrase01_normality_F <- "El valor p es __p_value__.  
+   El valor alfa es __alpha_value__.  
+   El valor p es menor al valor de alfa.  
+   Se rechaza la Hipotesis Nula para el test de Normalidad de Shapiro-Wilks.  
+   Con un valor de confianza del __confidence_value__ se descarta que los residuos presentan distribucion gaussiana.  
+   Estadísticamente la distribución de los residuos es diferente de la distribución gaussiana.  "
+
+  phrase01_normality_OUTPUT <- ifelse(test = check_residuals_normality, 
+                                       yes = phrase01_normality_T, 
+                                        no = phrase01_normality_F) 
+  
+  phrase01_normality_OUTPUT <- gsub(pattern = "__p_value__", 
+                                replacement = p_value_normality, 
+                                          x = phrase01_normality_OUTPUT)
+   
+  phrase01_normality_OUTPUT <- gsub(pattern = "__alpha_value__", 
+                                replacement = alpha_value, 
+                                          x = phrase01_normality_OUTPUT)
+      
+  phrase01_normality_OUTPUT <- gsub(pattern = "__confidence_value__", 
+                                replacement = confidence_value, 
+                                          x = phrase01_normality_OUTPUT)
+  
+  print(phrase01_normality_OUTPUT)
+```
+
+
+```{r,  eval = T, include =F}
+
+  # Homogeneity
+  p_value_homogeneity <- test_residuals_homogeneity$"p.value"
+  check_residuals_homogeneity <-  p_value_homogeneity >= alpha_value
+  
+   phrase01_homogeneity_T <- "El valor p es __p_value__.  
+   El valor alfa es __alpha_value__.  
+   El valor p es mayor o igual al valor de alfa.  
+   No se rechaza la Hipotesis Nula para el test de homogeneidad de Bartlett.  
+   Con un valor de confianza del __confidence_value__ no se descarta que los residuos presentan homogeneidad de varianzas entre los niveles del factor.  
+   Estadísticamente los residuos son homocedásticos.  "
+
+   phrase01_homogeneity_F <- "El valor p es __p_value__.  
+   El valor alfa es __alpha_value__.  
+   El valor p es menor al valor de alfa.  
+   Se rechaza la Hipotesis Nula para el test de homogeneidad de Bartlett.  
+   Con un valor de confianza del __confidence_value__ se descarta que los residuos presentan homogeneidad de varianzas entre los niveles del factor.  
+   Estadísticamente los residuos son heterocedásticos.  "
+
+  phrase01_homogeneity_OUTPUT <- ifelse(test = check_residuals_homogeneity, 
+                                         yes = phrase01_homogeneity_T, 
+                                          no = phrase01_homogeneity_F) 
+  
+  phrase01_homogeneity_OUTPUT <- gsub(pattern = "__p_value__", 
+                                  replacement = p_value_homogeneity, 
+                                            x = phrase01_homogeneity_OUTPUT)
+   
+  phrase01_homogeneity_OUTPUT <- gsub(pattern = "__alpha_value__", 
+                                  replacement = alpha_value, 
+                                            x = phrase01_homogeneity_OUTPUT)
+      
+  phrase01_homogeneity_OUTPUT <- gsub(pattern = "__confidence_value__", 
+                                  replacement = confidence_value, 
+                                            x = phrase01_homogeneity_OUTPUT)
+  
+  print(phrase01_homogeneity_OUTPUT)
+``` 
+
+
+```{r,  eval = T, include =F}
+# Check Requeriments
+
+check_requeriments <- sum(check_residuals_normality + check_residuals_homogeneity) == 2
+
+
+######################################################################################
+phrase01_requeriments_OK <- ""
+
+phrase01_requeriments_NotOK <- "No se cumplen los requisitos del modelo.  
+NO es válido sacar conclusiones del test de Anova y/o del test de Tukey en ningún caso.  
+Indistintamente de los valores p obtenidos en el análisis y sus posibles interpretaciones, el análisis de esta base de datos con esta herramienta estadística queda DESCARTADO.   
+Debe utilizarse otra herramienta estadística para analizar este pool de datos.  
+Algunas posibles herramientas son:  
+1) Test de Kruskal-Wallis (Estadística de Distribución Libre).  
+2) Modelos Lineales Generalizados.  
+3) Modelos Lineales Generalizados Mixtos.  
+4) Estadística Exacta.  
+La elección de la herramienta dependerá del contexto de su diseño.  "
+
+
+
+phrase01_requeriments_OUTPUT <- ifelse(test = check_requeriments, 
+                                        yes = phrase01_requeriments_OK, 
+                                         no = phrase01_requeriments_NotOK) 
+
+##################################################################################
+
+phrase02_requeriments_OK <- "Se cumplen los requisitos del modelo.  
+Es válido sacar conclusiones del test de Anova.  " 
+
+phrase02_requeriments_NotOK <- "" 
+
+
+
+phrase02_requeriments_OUTPUT <- ifelse(test = check_requeriments, 
+                                        yes = phrase02_requeriments_OK, 
+                                         no = phrase02_requeriments_NotOK) 
+######################################################################################
+
+
+
+```
+
+
+
+```{r, include =F, eval =T, class.source="bg-success"}
+
+p_value_anova <- df_table_anova$"Pr(>F)"[1]
+check_anova <- p_value_anova  >= alpha_value
+
+phrase01_anova_T <- "El valor p es __p_value__.  
+   El valor alfa es __alpha_value__.  
+   El valor p es mayor o igual al valor de alfa.  
+   No se rechaza la hipotesis nula para el test de Anova a 1 Factor.  
+   Con un valor de confianza del __confidence_value__ no se descarta que todas las medias de la variable respuesta '__vr_name__' son iguales para los niveles del factor '__factor_name__'.  
+   No existen diferencias estadísticamente significativas entre los niveles del factor.  
+   Los niveles del factor son estadísticamente iguales respecto a sus medias.  
+   No es válido interpretar el test de Tukey. Indistintamente de los grupos estadísticos que podría sugerir el test Tukey, todos los niveles del factor son estadísticamente iguales."
+
+phrase01_anova_F <- "El valor p es __p_value__.  
+   El valor alfa es __alpha_value__.  
+   El valor p es menor al valor de alfa.  
+   Se rechaza la hipotesis nula para el test de Anova a 1 Factor.  
+   Con un valor de confianza del __confidence_value__ se descarta que todas las medias de la variable respuesta '__vr_name__' son iguales para los niveles del factor '__factor_name__'.  
+   Al menos una media es estadísticamente diferente.  
+   Existen diferencias estadísticamente significativas entre los niveles del factor.  
+   Los niveles del factor no son estadísticamente iguales respecto a sus medias.  
+   Al rechazarse la H0 de Anova a 1 Factor, al menos son estadísticamente diferentes el nivel del factor con la media más alta del nivel del factor con la media más baja.  
+   Es válido interpretar la tabla del Test de Tukey para agrupar a los niveles del factor en grupos.
+   "
+
+    phrase01_anova_OUTPUT <- ifelse(test = check_anova, 
+                                   yes = phrase01_anova_T, 
+                                    no = phrase01_anova_F) 
+  
+    phrase01_anova_OUTPUT <- gsub(pattern = "__p_value__", 
+                              replacement = p_value_anova, 
+                                        x = phrase01_anova_OUTPUT)
+   
+    phrase01_anova_OUTPUT <- gsub(pattern = "__alpha_value__", 
+                              replacement = alpha_value, 
+                                        x = phrase01_anova_OUTPUT)
+      
+    phrase01_anova_OUTPUT <- gsub(pattern = "__confidence_value__", 
+                              replacement = confidence_value, 
+                                        x = phrase01_anova_OUTPUT)
+  
+
+    phrase01_anova_OUTPUT <- gsub(pattern = "__factor_name__", 
+                              replacement = colnames(minibase)[2], 
+                                        x = phrase01_anova_OUTPUT)
+    
+    phrase01_anova_OUTPUT <- gsub(pattern = "__vr_name__", 
+                              replacement = colnames(minibase)[1], 
+                                        x = phrase01_anova_OUTPUT)
+        
+    print(phrase01_anova_OUTPUT)
+  
+    ############################################################################
+    phrase02_anova_F <- "No se rechaza la hipótesis nula de Anova.  
+    No existen diferencias estadísticamente significativas entre las medias de la variable '__vr_name__' para lo niveles del factor '__factor_name__'."
+    
+    
+    phrase02_anova_T <- "Se rechaza la hipótesis nula de Anova.  
+    Existen diferencias estadísticamente significativas entre las medias de la variable '__vr_name__' para lo niveles del factor '__factor_name__'.  
+    Debe observarse el test de comparaciones múltiple Anova para determinar los grupos estadísticamente iguales entre los niveles del factor."
+    
+    
+        phrase02_anova_OUTPUT <- ifelse(test = check_anova, 
+                                   yes = phrase02_anova_T, 
+                                    no = phrase02_anova_F)
+    
+        phrase02_anova_OUTPUT <- gsub(pattern = "__factor_name__", 
+                                  replacement = colnames(minibase)[2], 
+                                            x = phrase02_anova_OUTPUT)
+    
+        phrase02_anova_OUTPUT <- gsub(pattern = "__vr_name__", 
+                                  replacement = colnames(minibase)[1], 
+                                            x = phrase02_anova_OUTPUT)
+    
+        if(!check_requeriments) phrase02_anova_OUTPUT <- ""
+```
+<br>
+<br>
+
+
+```{r, include =T, eval =T, class.source="bg-success"}
+ # Tukey
+  phrase01_tukey_STANDARD <- "Letras iguales de grupo corresponde a niveles del factor estadísticamente iguales.  
+  Letras diferentes de grupo corresponde a niveles del factor estadísticamente diferentes."
+
+  print(phrase01_tukey_STANDARD)
+
+  ##############################################################################
+  phrase02_tukey_T <- "Los niveles del factor presentan diferente n.  
+Se detalla el desbalance de repeticiones en la función agricolae::HSD.test() para que realice una corrección al test de Tukey."
+
+  phrase02_tukey_F <- "Los niveles del factor presentan el mismo n.  
+Se detalla el balance de repeticiones en la función agricolae::HSD.test() para que realice el test de Tukey clásico."
+
+  phrase02_tukey_OUTPUT <- ifelse(test = check_unbalanced_reps, 
+                                   yes = phrase02_tukey_T, 
+                                    no = phrase02_tukey_F) 
+  
+  print(phrase02_tukey_OUTPUT)
+  
+  ##############################################################################
+  
+  vector_letters_tukey <- df_tukey_table$"groups"
+  amount_letters <- length(unique(vector_letters_tukey))
+  check_groups_tukey <- amount_letters >= 2
+  
+  list_phrase03_tukey <- list()
+  # Case 01) If check_anova is FALSE and check_groups_tukey is FALSE
+  # Nada que decir...
+  list_phrase03_tukey[[1]] <- ""
+  
+  # Case 02) If check_anova is FALSE and check_groups_tukey is TRUE
+  # Indicamos que al no rechazar Ho de Anova, no es valido sacar conclusiones
+  # de ningun test de comparaciones ya sea Tukey u otro, y que todos los
+  # niveles del factor deben ser considerados iguales indistintamente de las letras
+  # indicadas por TUkey.
+  list_phrase03_tukey[[2]] <- "Al no rechazarse la hipótesis nula de Anova no es válido sacar conclusiones de ningún test de comparaciones múltiple (no solo de Tukey). No deben contemplarse las sugerencias de grupos estadísticos del test de Tukey. Indistintamente de los grupos estadísticos sugeridos por Tukey se concluye que todos los niveles del factor son estadísticamente iguales."
+  
+  # Case 03) If check_anova is TRUE and check_groups_tukey is FALSE
+  # Rechazo Anova y Tukey no muestra diferentes. Le decimos que
+  # al rechazar Anova al menos son diferentes los niveles del factor que
+  # corresponden a la media mas baja y mas alta. Y que debiera probar si corresponde
+  # con otro test de comparaciones multiples.
+  list_phrase03_tukey[[3]] <- "Al rechazarse la hipótesis nula del test de Anova implica que al menos una media es diferente. Desde el punto de vista estadístico aunque Tukey no encuentra diferencia entre los niveles del factor al ser rechazada la hipótesis nula de Anova implica que al menos son estadísticamente diferentes el nivel del factor con la media más alta y respecto al nivel del factor con la media más baja; aunque nada puede indicarse para el resto de los niveles del factor. Este caso muy particular puede requerir de utilizar otra herramienta como test de comparaciones múltiples en vez de Tukey."
+  
+  # Case 04) If check_anova is TRUE and check_groups_tukey is TRUE.
+  # No decimos nada.
+  list_phrase03_tukey[[4]] <- ""
+  
+  if(!check_anova && !check_groups_tukey) phrase03_tukey_OUTPUT <- list_phrase03_tukey[[1]] else
+    if(!check_anova && check_groups_tukey) phrase03_tukey_OUTPUT <- list_phrase03_tukey[[2]] else
+      if(check_anova && !check_groups_tukey) phrase03_tukey_OUTPUT <- list_phrase03_tukey[[3]] else
+        if(check_anova && check_groups_tukey) phrase03_tukey_OUTPUT <- list_phrase03_tukey[[4]] 
+  
+  
+  
+  print(phrase03_tukey_OUTPUT)
+
+ 
+
+```
+
+
+
+```{r,  eval = T, include =F}
+# Save all objects!
+save.image(file = "R_results.Rdata")
+```
