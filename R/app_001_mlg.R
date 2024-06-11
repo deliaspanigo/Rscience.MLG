@@ -36,7 +36,9 @@ ui <- shinydashboard::dashboardPage(
       shinydashboard::menuItem(text = "database", tabName = "tab_database", icon = shiny::icon("th")),
 
 
-      shinydashboard::menuItem(text = "Test 001 - Anova 1 Factor", tabName = "tab_test001_p01", icon = shiny::icon("th"))
+      shinydashboard::menuItem(text = "Test 001 - Anova 1 Factor", tabName = "tab_test001_p01", icon = shiny::icon("th")),
+
+      shinydashboard::menuItem(text = "Test 002 - Kaplan-Maier", tabName = "tab_test002_p01", icon = shiny::icon("th"))
 
 
     )
@@ -62,7 +64,11 @@ ui <- shinydashboard::dashboardPage(
 
       shinydashboard::tabItem(tabName = "tab_test001_p01",
                            #   tableOutput("la_tabla"),
-                              module_mlg_test001_p01_ui("space_test001_p01"))#, # Final - tab_clase01
+                              module_mlg_test001_p01_ui("space_test001_p01")),#, # Final - tab_clase01
+
+      shinydashboard::tabItem(tabName = "tab_test002_p01",
+                              #   tableOutput("la_tabla"),
+                              module_mlg_test002_p01_ui("space_test002_p01"))#, # Final - tab_clase01
 
      )
     )
@@ -85,12 +91,21 @@ server <- function(input, output) {
 
 
   # Server - Test001 - Anova 1 Factor
-
   module_mlg_test001_p01_serverA(id = "space_test001_p01",
                                  database = input_list_database$"database",
                                  code_database = input_list_database$"code_database")
 
   module_mlg_test001_p01_serverB(id = "space_test001_p01", database = input_list_database$database)
+
+
+
+  # Server - Test001 - Anova 1 Factor
+  module_mlg_test002_p01_serverA(id = "space_test002_p01",
+                                 database = input_list_database$"database",
+                                 code_database = input_list_database$"code_database")
+
+  module_mlg_test002_p01_serverB(id = "space_test002_p01", database = input_list_database$database)
+
 
 } #--- Fin server
 

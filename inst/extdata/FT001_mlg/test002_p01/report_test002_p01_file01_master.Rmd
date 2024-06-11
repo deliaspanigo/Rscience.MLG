@@ -1,0 +1,351 @@
+---
+title: "Diplo - Kaplan-Meier"
+author: "David Elias Panigo"
+date: "24-05-2024"
+output:
+  html_document:
+    df_print: paged
+---
+<br>
+<br>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var title = document.querySelector('h1.title');
+  var author = document.querySelector('.author');
+  var date = document.querySelector('.date');
+  
+  title.style.display = 'none';
+  author.style.display = 'none';
+  date.style.display = 'none';
+});
+</script>
+
+<div class="image-container">
+  <img src="logo_01_unc.png"      class="inline-image" width="200"  height="100">
+  <img src="logo_02_fcefyn.png"   class="inline-image" width="200"  height="100">
+  <img src="logo_03_efadoc.png"   class="inline-image" width="200"  height="100">
+  <img src="logo_04_rscience.png" class="inline-image" width="200"  height="100">
+</div>
+
+## Diplomatura en Bioestadística básica aplicada mediada con R
+
+#### Hora de ejecución: `r the_time`
+#### Sistema operativo: `r Sys.info()["sysname"]`
+#### Versión de R: `r R.version.string`
+#### Versión de RStudio: `r RStudio.Version()$version`
+#### Versión de Rscience.Diplo: `r packageVersion("Rscience.MLG")`
+
+<br>
+<br>
+
+## General Linear Models - Sobrevida de Kaplan-Meier
+
+```{r,  include =FALSE}
+knitr::opts_chunk$set(echo=TRUE, comment=NA)
+```
+
+### Section 01 of 15 - Libraries
+```{r, include =T, eval = T, class.source="bg-success"}
+### Section 01 of 15 - Libraries
+library("ggplot2")
+library("openxlsx")
+library("survival")
+library("survminer")
+```
+<br>
+<br>
+
+### Section 02 of 15 - Load database
+```{r, include =T, eval = F, class.source="bg-success"}
+### Section  02 de 15 - Load database
+# Import database
+database <-  __code_database__  
+
+# Show first 5 rows
+head(x=database, n=5)
+```
+
+```{r, include =F, eval = T, echo = FALSE, class.source="bg-success"}
+### Section  02 de 15 - Load database
+# Import database
+database <-  BASE  
+
+# Show first 5 rows
+head(x=database, n=5)
+```
+<br>
+<br>
+
+### Section 03 of 15 - Alpha value and confidence value
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  03 de 15 - Alpha value and confidence value
+
+# Alpha value and Confidence value
+alpha_value <- 0.05
+confidence_value <- 1 - alpha_value
+
+
+df_alpha <- data.frame(
+  "alpha_value" = alpha_value,
+  "confidence_value" = confidence_value
+)
+
+df_alpha
+
+```
+<br>
+<br>
+
+
+
+### Section 04 of 15 - Var selection
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  04 de 15 - Var selection
+
+# Name for each selected var
+colname_time <-  '__selected_time_name__'
+colname_status <- '__selected_status_name__'
+colname_treatment <- '__selected_treatment_name__'
+
+# All selected var in specific order
+vector_selected_vars <- c(colname_time, colname_status, colname_treatment)
+vector_selected_vars
+
+# Tabla referencia
+df_reference <- data.frame(
+  "order" = 1:length(vector_selected_vars),
+  "selected_vars" = vector_selected_vars, 
+  "role_vars" = c("time", "status", "group")
+)
+df_reference
+```
+<br>
+<br>
+### Section  05 de 15 - minibase
+```{r, include =T, eval =T, class.source="bg-success"}
+### Section  05 de 15 - minibase
+
+# Selected vars with full data on rows only
+minibase <- na.omit(database[,vector_selected_vars])
+vector_new_names <- df_reference$"role_vars"
+colnames(minibase) <- vector_new_names
+
+# Factor must be a factor on R enviroment.
+minibase[,"group"] <- as.factor(as.character(minibase[,"group"]))
+vector_categorias <- levels(minibase$group)
+cantidad_categorias <- nlevels(minibase$group)
+vector_colores <- rainbow(cantidad_categorias)
+
+# Show first 5 rows
+head(x=minibase, n=5)
+
+# Info
+df_show_n <- data.frame(
+  "object" = c("database", "minibase"),
+  "n_col" = c(ncol(database), ncol(minibase)),
+  "n_row" = c(nrow(database), nrow(minibase))
+)
+df_show_n
+```
+<br>
+<br>
+
+
+### Section  06 de 15 - Sobrevida General
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# Crear un objeto de supervivencia para todos los individuos
+fit_general <- survfit(Surv(time, status) ~ 1, data = minibase)
+fit_general
+```
+<br>
+<br>
+
+
+##############################
+
+```{r, include =T, eval =T, echo = F, class.source="bg-success"}
+# Guardamos la poca informacion que nos da
+TABLA <- summary(fit_general)
+# TABLA
+
+surv_mediana <- TABLA[["surv"]]
+orden_mediana <- c(1:length(surv_mediana))
+
+# Armamos algunos elementos
+TABLA1 <- data.frame(cbind(orden_mediana, TABLA[["surv"]], TABLA[["time"]]))
+colnames(TABLA1) <- c("Orden Mediana", "Proporcion de Sobrevida", "Tiempo")
+
+TABLA2 <- data.frame(cbind(orden_mediana, TABLA[["lower"]], TABLA[["time"]]))
+TABLA3 <- data.frame(cbind(orden_mediana, TABLA[["upper"]], TABLA[["time"]]))
+
+
+# Encontramos la mediana
+TABLA1 <- na.omit(TABLA1)
+mediana_KM <- NA
+if(ncol(TABLA1) > 1)   if (nrow(TABLA1) > 0) if (min(TABLA1[,2]) <= 0.5) {
+
+  dt <- TABLA1[,2] <= 0.5
+  TABLA1 <- TABLA1[dt,]
+  mediana_KM <- TABLA1[1,3]
+}
+#  mediana_KM
+
+
+
+# Encontramos el low de la mediana
+TABLA2 <- na.omit(TABLA2)
+mediana_low <- NA
+if(ncol(TABLA2) > 1)   if (nrow(TABLA2) > 0) if (min(TABLA2[,2]) <= 0.5) {
+
+  dt <- TABLA2[,2] <= 0.5
+  TABLA2 <- TABLA2[dt,]
+  mediana_low <- TABLA2[1,3]
+}
+#  mediana_low
+
+
+# Encontramos el upp de la mediana
+TABLA3 <- na.omit(TABLA3)
+mediana_upp <- NA
+if(ncol(TABLA3) > 1)   if (nrow(TABLA3) > 0) if (min(TABLA3[,2]) <= 0.5) {
+
+  dt <- TABLA3[,2] <= 0.5
+  TABLA3 <- TABLA3[dt,]
+  mediana_upp <- TABLA3[1,3]
+}
+#  mediana_upp
+
+# Armamos una tabla nueva con la informacion que recolectamos
+nombres <- c("n", "Eventos", "Mediana de Sobrevida (50%)", "Límite Inferior", "Límite Superior",
+             "Alfa", "Confianza")
+TABLA_KM <- c(nrow(minibase), sum(minibase$status), mediana_KM, mediana_low, mediana_upp,
+              alpha_value, confidence_value)
+TABLA_KM <- as.character(TABLA_KM)
+dim(TABLA_KM) <- c(1, length(TABLA_KM))
+colnames(TABLA_KM) <- nombres
+TABLA_KM[1,is.na(TABLA_KM[1,])] <- "Sin estimación posible"
+
+
+##############################
+```
+
+```{r, include =T, eval =T, class.source="bg-success"}
+
+print(fit_general, print.rmean = TRUE)
+
+quantile(fit_general, c(0.05, 0.5, 0.95))
+```
+<br>
+<br>
+
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# Extraer los datos del objeto survfit
+surv_data_general <- data.frame(
+  time = fit_general$time,
+  n.risk = fit_general$n.risk,
+  n.event = fit_general$n.event,
+  surv = fit_general$surv
+)
+
+# Crear una columna para el tiempo censurado
+surv_data_general$censored <- with(surv_data_general, ifelse(n.event == 0, TRUE, FALSE))
+surv_data_general
+```
+<br>
+<br>
+
+
+
+
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# Crear el gráfico de la curva de supervivencia
+plot01_general <- ggplot(surv_data_general, aes(x = time, y = surv)) +
+  geom_step() +  # Añadir líneas escalonadas para las curvas de supervivencia
+  geom_point(data = subset(surv_data_general, censored == TRUE), aes(x = time, y = surv), shape = 3) +  # Añadir puntos para los datos censurados
+  labs(
+    title = "Curva de Supervivencia de Kaplan-Meier",
+    x = "Tiempo en días",
+    y = "Probabilidad de Supervivencia"
+  ) +
+  theme_minimal()  # Usar un tema minimalista para el gráfico
+
+plot01_general
+```
+<br>
+<br>
+
+### Section  06 de 15 - Sobrevida por grupos
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# Crear un objeto de supervivencia particionado por grupos de sexo
+fit_group <- survfit(Surv(time, status) ~ group, data = minibase)
+fit_group
+```
+<br>
+<br>
+
+```{r, include =T, eval =T, class.source="bg-success"}
+# Extraer los datos del objeto survfit
+surv_data_group <- data.frame(
+  time = fit_group$time,
+  n.risk = fit_group$n.risk,
+  n.event = fit_group$n.event,
+  surv = fit_group$surv,
+  strata = rep(names(fit_group$strata), fit_group$strata)
+)
+
+
+# Crear una columna para el sexo con etiquetas descriptivas
+surv_data_group$group <- factor(surv_data_group$strata, 
+                                labels = vector_categorias)
+
+# Crear una columna para el tiempo censurado
+surv_data_group$censored <- with(surv_data_group, ifelse(n.event == 0, TRUE, FALSE))
+
+
+surv_data_group
+```
+<br>
+<br>
+
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# Crear el gráfico de la curva de supervivencia
+plot02_group <- ggplot(surv_data_group, aes(x = time, y = surv, color = group)) +
+  geom_step() +  # Añadir líneas escalonadas para las curvas de supervivencia
+  geom_point(data = subset(surv_data_group, censored == TRUE), aes(x = time, y = surv), shape = 3) +  # Añadir puntos para los datos censurados
+  labs(
+    title = "Curvas de Supervivencia de Kaplan-Meier por Sexo",
+    x = "Tiempo en días",
+    y = "Probabilidad de Supervivencia",
+    color = "Sexo"
+  ) +
+  theme_minimal() +  # Usar un tema minimalista para el gráfico
+  theme(legend.position = "bottom")  # Posicionar la leyenda en la parte inferior
+
+plot02_group
+```
+<br>
+<br>
+
+#### Log Rank Test
+```{r, include =T, eval =T, class.source="bg-success"}
+
+# Realizar una prueba log-rank para comparar las curvas de supervivencia
+log_rank_test <- survdiff(Surv(time, status) ~ group, data = minibase)
+
+# Mostrar los resultados de la prueba log-rank
+log_rank_test
+```
+<br>
+<br>
+
+
+
+```{r,  eval = T, include =F}
+# Save all objects!
+save.image(file = "R_results.Rdata")
+```

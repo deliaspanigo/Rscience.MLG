@@ -1,0 +1,106 @@
+---
+title: "Diplo - Kaplan-Meier"
+author: "David Elias Panigo"
+date: "24-05-2024"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+always_allow_html: true
+---
+<br>
+<br>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var title = document.querySelector('h1.title');
+  var author = document.querySelector('.author');
+  var date = document.querySelector('.date');
+  
+  title.style.display = 'none';
+  author.style.display = 'none';
+  date.style.display = 'none';
+});
+</script>
+
+<div class="image-container">
+  <img src="logo_01_unc.png"      class="inline-image" width="200"  height="100">
+  <img src="logo_02_fcefyn.png"   class="inline-image" width="200"  height="100">
+  <img src="logo_03_efadoc.png"   class="inline-image" width="200"  height="100">
+  <img src="logo_04_rscience.png" class="inline-image" width="200"  height="100">
+</div>
+
+## Diplomatura en Bioestadística básica aplicada mediada con R
+
+#### Hora de ejecución: `r the_time`
+#### Sistema operativo: `r Sys.info()["sysname"]`
+#### Versión de R: `r R.version.string`
+#### Versión de RStudio: `r RStudio.Version()$version`
+#### Versión de Rscience.Diplo: `r packageVersion("Rscience.MLG")`
+
+<br>
+<br>
+
+## General Linear Models - Sobrevida de Kaplan-Meier
+```{r,  include =FALSE}
+library("plotly")
+library("png")
+library("grid")
+library("knitr")
+library("kableExtra")
+```
+
+
+```{r,  include =FALSE}
+knitr::opts_chunk$set(echo=TRUE, comment=NA)
+```
+
+```{r,  include =FALSE}
+load("R_results.Rdata")
+```
+
+
+### Section 02 of 15 - Load database
+```{r, include =T, eval = T, echo = F, class.source="bg-success"}
+knitr::kable(df_alpha, caption = "", align = 'c') %>%
+  kableExtra::kable_styling(position = "center", full_width = FALSE, 
+                       bootstrap_options = c("striped", "hover")) %>%
+  kableExtra::add_footnote("Alpha and confidence", notation = "none")
+
+#knitr::kable(, caption = )
+```
+<br>
+<br>
+
+
+### Section 02 of 15 - Load database
+```{r, include =T, eval = T, echo = F, class.source="bg-success"}
+knitr::kable(df_reference, caption = "", align = 'c') %>%
+  kableExtra::kable_styling(position = "center", full_width = FALSE, 
+                       bootstrap_options = c("striped", "hover")) %>%
+  kableExtra::add_footnote("Reference table", notation = "none")
+
+```
+<br>
+<br>
+
+### Section 02 of 15 - Load database
+```{r, include =T, eval = T, echo = F, class.source="bg-success"}
+knitr::kable(TABLA_KM, caption = "", align = 'c') %>%
+  kableExtra::kable_styling(position = "center", full_width = FALSE, 
+                       bootstrap_options = c("striped", "hover")) %>%
+  kableExtra::add_footnote("Mediana KM - General", notation = "none")
+
+```
+<br>
+<br>
+
+
+
+
+### Section 02 of 15 - Load database
+```{r, include =T, eval = T, echo = F, class.source="bg-success"}
+plot01_general
+```
+<br>
+<br>
+

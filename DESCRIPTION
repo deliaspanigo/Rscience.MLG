@@ -17,6 +17,7 @@ Imports:
   Hmisc,
   markdown,
   openxlsx,
+  png,
   plotly,
   purrr,
   rclipboard,
@@ -29,7 +30,11 @@ Imports:
   shinyWidgets,
   stringr,
   tidyverse,
-  tools
+  tools,
+  ggplot2,
+  openxlsx,
+  survival,
+  survminer
 Depends: 
     R (>= 4.3.0)
 LazyData: true
