@@ -15,6 +15,7 @@ Imports:
   DT,
   gplots,
   Hmisc,
+  markdown,
   openxlsx,
   plotly,
   purrr,

@@ -661,19 +661,19 @@ module_mlg_test001_p01_serverA <- function(id, database, code_database){
         print("VA BIEN 01")
         # Selected class
         selected_family_test <- "FT001_mlg"
-        selected_test_part <- "test001_p01_anova_1_way"
+        selected_test_part <- "test001_p01"
 
         # # # Special folder
         the_package_name <- "Rscience.MLG"
-        special_folder_package <- file.path("extdata", "master_mlg", selected_family_test, selected_test_part)
+        special_folder_package <- file.path("extdata", selected_family_test, selected_test_part)
         special_folder_local <- file.path("inst", special_folder_package)
 
 
         # # # ---- Input objects ---- # # #
         input_old_str <- "_master"
         input_new_str <- "_mod"
-        input_file_rmd   <- paste0("report_", selected_test_part, "_master.Rmd")
-        input_file_rmd02   <- paste0("report_test001_p02_anova_1_way_master.Rmd")
+        input_file_rmd   <- paste0("report_", selected_test_part, "_file01_master.Rmd")
+        input_file_rmd02   <- paste0("report_test001_p01_file02_master.Rmd")
         input_file_css   <- "styles.css"
         input_file_png01 <- "logo_01_unc.png"
         input_file_png02 <- "logo_02_fcefyn.png"
